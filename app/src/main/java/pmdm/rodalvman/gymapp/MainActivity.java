@@ -1,5 +1,8 @@
 package pmdm.rodalvman.gymapp;
 
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -20,9 +23,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.view.Menu;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.net.CookieManager;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, TarefaDescargaXML.Cliente {
+
+    private static final int LOGIN = 1;
+    private SharedPreferences sp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +58,12 @@ public class MainActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
+
+        sp = getSharedPreferences("gymapp", MODE_PRIVATE);
+
+        CookieManager.setDefault(new CookieManager());
+
+        login();
     }
 
     @Override
@@ -103,4 +122,53 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+    private void login() {
+        String login = sp.getString("login", null);
+        boolean credenciaisValidadas = sp.getBoolean("credenciaisValidadas", false);
+
+        // Se login é null teño que pedir nome de usuario e password ó usuario
+        // lanzando o correspondente Activity
+
+
+        if (login == null || !credenciaisValidadas) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        } else {
+             //Inicio sesión co login e password que están en SharedPreferences
+            String password = sp.getString("password", null);
+            TarefaDescargaXML tdx = new TarefaDescargaXML(MainActivity.this, LOGIN);
+            tdx.execute(Servizo.urlLogin(login, password));
+        }
+    }
+
+    @Override
+    public void recibirDocumento(Document resultado, int tipoDescarga) {
+        //Comprobar que resultado non é null, se o é avisamos ó usuario e non continuamos
+        if (resultado == null) {
+            Toast.makeText(this, "Problemas de conexión", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Element raiz = resultado.getDocumentElement();
+
+        if (tipoDescarga == LOGIN) {
+            if (raiz.getTagName().equalsIgnoreCase("resultado")) {
+                Toast.makeText(this, raiz.getTextContent(), Toast.LENGTH_LONG).show();
+
+                if (raiz.getTextContent().equalsIgnoreCase("Login correcto")) {
+                    //Anoto en SharedPreferences que as credenciais son válidas
+                    sp.edit().putBoolean("credenciaisValidadas", true).commit();
+                } else {
+                    // Se o login non foi correcto, volvemos a pedir as credenciais ó usuario
+                    // pero antes temos que borrar o login e password utilizados neste intento
+                    // e que están gardados en SharedPreferences
+                    //sp.edit().remove("login").remove("password").commit();
+
+                    login();
+                }
+            }
+        }
+    }
 }
+

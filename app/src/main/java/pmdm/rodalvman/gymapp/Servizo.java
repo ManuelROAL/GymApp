@@ -16,6 +16,14 @@ public class Servizo {
         return cadea2Url(cadeaUrl);
     }
 
+    public static URL urlRegistro(String registro, String password) {
+        String cadeaUrl = urlBase + "registro.php?registro=" + encode(registro) + "&password=" + encode(password);
+
+        System.out.println(cadeaUrl);
+
+        return cadea2Url(cadeaUrl);
+    }
+
     private static String encode(String valor) {
         try {
             return URLEncoder.encode(valor, "utf8");

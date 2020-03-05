@@ -25,7 +25,7 @@ public class LoginActivity extends AppCompatActivity implements TarefaDescargaXM
         sp = getSharedPreferences("gymapp", MODE_PRIVATE);
     }
 
-    public void confirmarLogin(View v) {
+    public void btLoginOk_OnClick(View v) {
         String login;
         EditText etLoginUsuario = (EditText) findViewById(R.id.etLoginUser);
         EditText etLoginPassword = (EditText) findViewById(R.id.etLoginPassword);
@@ -43,6 +43,11 @@ public class LoginActivity extends AppCompatActivity implements TarefaDescargaXM
                 .putBoolean("credenciaisValidadas", false).commit();
 
         tdx.execute(Servizo.urlLogin(login, password));
+    }
+
+    public void btLoginRegister_OnClick(View v) {
+        Intent intent = new Intent(this, RegistroActivity.class);
+        startActivity(intent);
     }
 
     @Override
